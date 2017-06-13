@@ -1,0 +1,49 @@
+#include "samv71q21.h"
+
+//page 294
+//31.17
+//Programing Sequence for changing clock PLL
+void PMC_Changing_clock(void)
+{
+	//prepare
+	//prepare
+	unsigned int temp;
+	temp = PMC->CKGR_MOR;
+	temp &=~ CKGR_MOR_MOSCRCF(0x7);
+	EFC->EEFC_WPMR |= EEFC_WPMR_WPEN | EEFC_WPMR_WPKEY_PASSWD;
+	EFC->EEFC_FMR |= EEFC_FMR_FWS(5);
+	PMC->CKGR_MOR = CKGR_MOR_KEY_PASSWD | temp;
+	while((PMC->PMC_SR & PMC_SR_MOSCRCS) != PMC_SR_MOSCRCS);
+	//step 1
+	//do nothing
+	//step 2
+	PMC->CKGR_MOR |= CKGR_MOR_KEY_PASSWD | CKGR_MOR_MOSCXTEN | CKGR_MOR_MOSCXTST(0xFF);
+	while((PMC->PMC_SR & PMC_SR_MOSCXTS) != PMC_SR_MOSCXTS);
+	//step 3
+	PMC->CKGR_MOR |= CKGR_MOR_KEY_PASSWD | CKGR_MOR_MOSCSEL;
+	//step 4
+	while((PMC->PMC_SR & PMC_SR_MOSCSELS) != PMC_SR_MOSCSELS);
+	//step 5
+	while((PMC->CKGR_MCFR & CKGR_MCFR_MAINFRDY) != CKGR_MCFR_MAINFRDY);
+	if(PMC->CKGR_MCFR == '\0' )
+	{
+		PMC->CKGR_MOR |= CKGR_MOR_KEY_PASSWD |CKGR_MOR_MOSCSEL;
+		while((PMC->PMC_SR & PMC_SR_MOSCSELS) != PMC_SR_MOSCSELS);
+	}
+	//step 6
+	PMC->CKGR_PLLAR |= CKGR_PLLAR_DIVA(1) | CKGR_PLLAR_PLLACOUNT(0x3F) | CKGR_PLLAR_MULA(0x18) | CKGR_PLLAR_ONE;
+	//step 7
+	PMC->PMC_MCKR |= PMC_MCKR_PRES_CLK_1;
+	while((PMC->PMC_SR & PMC_SR_MCKRDY) != PMC_SR_MCKRDY);
+	PMC->PMC_MCKR |= PMC_MCKR_MDIV_PCK_DIV2;
+	while((PMC->PMC_SR & PMC_SR_MCKRDY) != PMC_SR_MCKRDY);
+	PMC->PMC_MCKR &= ~PMC_MCKR_CSS(0x1);
+	while((PMC->PMC_SR & PMC_SR_MCKRDY) != PMC_SR_MCKRDY);
+	PMC->PMC_MCKR |= PMC_MCKR_CSS(0x2);
+	while((PMC->PMC_SR & PMC_SR_MCKRDY) != PMC_SR_MCKRDY);
+}
+
+void System_Init(void)
+{
+	PMC_Changing_clock();
+}
