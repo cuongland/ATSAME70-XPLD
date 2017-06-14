@@ -12,7 +12,7 @@ void UART_init(void)
 	//setting mode
 	UART3->UART_MR |= UART_MR_PAR_NO;
 	//baud rate 9600
-	UART3->UART_BRGR |= 977;
+	UART3->UART_BRGR |= 976;
 	//enable transmit and receive
 	UART3->UART_CR = UART_CR_TXEN;
 }
